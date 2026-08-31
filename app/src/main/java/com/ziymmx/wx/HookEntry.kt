@@ -1,5 +1,6 @@
 package com.ziymmx.wx
 
+import android.os.Process
 import android.util.Log
 import com.ziymmx.wx.hook.AntiRecallHook
 import com.ziymmx.wx.hook.DisableHotUpdateHook
@@ -36,7 +37,8 @@ class HookEntry : XposedModule() {
         // 子进程（如 xweb_privileged_process_0、push 等）不会初始化微信
         // ServiceManager，过早调用 getService 会抛
         // IllegalStateException: please call initialize(...) first。
-        if (param.packageName != TARGET_PACKAGE || param.processName != TARGET_PACKAGE) return
+        if (param.packageName != TARGET_PACKAGE) return
+        if (Process.myProcessName() != TARGET_PACKAGE) return
         if (!param.isFirstPackage) return
 
         try {
