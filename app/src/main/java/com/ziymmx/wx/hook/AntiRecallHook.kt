@@ -19,8 +19,8 @@ import kotlin.random.Random
  * XmlParser 解析成 Map 后交给业务层处理。本模块在解析完成后：
  *
  *  1. 将解析结果中的类型置空，阻止微信执行「撤回」流程，原消息保留在聊天界面；
- *  2. 通过 MsgInfoStorage 反查被撤回的原始消息，插入一条 type=10000 的系统提示
- *     「xxx 撤回了一条消息」，并附带原文摘要；
+ *  2. 通过 MsgInfoStorage 反查被撤回的原始消息，插入一条 type=10000 的系统提示，
+ *     文案与微信原生撤回提示一致（如「张三」撤回了一条消息），不附加任何自定义内容；
  *  3. 使该提示可点击：点击后调用微信自身的 ChattingDataAdapterV3#T0，
  *     滚动并高亮定位到被撤回的原消息。
  *
@@ -31,7 +31,6 @@ internal object AntiRecallHook {
     private const val TYPE_KEY = ".sysmsg.\$type"
     private const val TYPE_REVOKE = "revokemsg"
     private const val TYPE_SYSTEM = 10000
-    private const val MAX_PREVIEW = 60
 
     private data class RecallInfo(val talker: String, val msgId: Long)
 
@@ -143,7 +142,6 @@ internal object AntiRecallHook {
             insertMsgMethod = insertDex.getMethodInstance(classLoader).apply { isAccessible = true }
             getMsgInfoMethod = getBySvrIdDex.getMethodInstance(classLoader).apply { isAccessible = true }
 
-            xposed.log(Log.INFO, HookUtils.TAG, "防撤回：消息存储引用就绪（存储实例懒加载）")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "防撤回：消息存储解析失败，仅保留撤回拦截", it) }
     }
 
@@ -222,7 +220,6 @@ internal object AntiRecallHook {
                     original
                 }
 
-            xposed.log(Log.INFO, HookUtils.TAG, "防撤回已启用：${method.declaringClass.name}.${method.name}")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "防撤回 hook 异常", it) }
     }
 
@@ -243,20 +240,13 @@ internal object AntiRecallHook {
             return
         }
 
-        val content = readField(msgInfo, "field_content") as? String ?: ""
         val talker = (readField(msgInfo, "field_talker") as? String)?.takeIf { it.isNotBlank() } ?: session
         val createTime = (readField(msgInfo, "field_createTime") as? Long) ?: System.currentTimeMillis()
         val msgId = (readField(msgInfo, "field_msgId") as? Long) ?: 0L
-        val type = (readField(msgInfo, "field_type") as? Int) ?: 0
-        val isSend = (readField(msgInfo, "field_isSend") as? Int) ?: 0
 
-        val senderName = extractSenderName(replaceMsg) ?: (if (isSend == 1) "你" else "对方")
-        val preview = humanReadable(type, content)
-        val notice = if (preview.isBlank()) {
-            "「$senderName」撤回了一条消息（点击查看原文）"
-        } else {
-            "「$senderName」撤回了一条消息（点击查看原文）\n原文：$preview"
-        }
+        // 直接使用微信下发的原生撤回提示文案（replacemsg，如「张三」撤回了一条消息），
+        // 与微信原始样式一致，不附加任何自定义内容；点击提示仍可定位并高亮原消息。
+        val notice = replaceMsg
 
         // 以提示文本为键：同一提示只插一次，且点击时能按 field_content 反查定位
         if (recallMap.putIfAbsent(notice, RecallInfo(talker, msgId)) == null) {
@@ -349,7 +339,6 @@ internal object AntiRecallHook {
                     original
                 }
 
-            xposed.log(Log.INFO, HookUtils.TAG, "防撤回：撤回提示点击定位已启用（${method.declaringClass.name}.${method.name}）")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "撤回提示点击定位 hook 失败（不影响撤回拦截）", it) }
     }
 
@@ -389,27 +378,6 @@ internal object AntiRecallHook {
     // ------------------------------------------------------------------
     private fun extractSenderName(replaceMsg: String): String? {
         return Regex("([\"「])(.*?)([」\"])").find(replaceMsg)?.groupValues?.getOrNull(2)
-    }
-
-    private fun humanReadable(type: Int, content: String): String {
-        val raw = when (type) {
-            1 -> content
-            3 -> "[图片]"
-            34 -> "[语音]"
-            43 -> "[视频]"
-            47 -> "[表情]"
-            48 -> "[位置]"
-            42 -> "[名片]"
-            49 -> {
-                val title = Regex("<title>(.*?)</title>", RegexOption.DOT_MATCHES_ALL)
-                    .find(content)?.groupValues?.getOrNull(1)?.trim()
-                if (!title.isNullOrBlank()) title else "[链接/小程序]"
-            }
-            1090519089 -> "[文件]"
-            else -> content.trim()
-        }
-        if (raw.isBlank()) return ""
-        return raw.replace(Regex("\\s+"), " ").take(MAX_PREVIEW)
     }
 
     private fun dpToPx(context: Context, dp: Int): Int {

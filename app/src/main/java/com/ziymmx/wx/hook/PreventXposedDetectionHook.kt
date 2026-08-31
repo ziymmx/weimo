@@ -26,7 +26,6 @@ internal object PreventXposedDetectionHook {
             }.filter { it.returnTypeName == HookUtils.BOOLEAN_TYPE }
 
             if (matches.isEmpty()) {
-                xposed.log(Log.INFO, HookUtils.TAG, "未发现 Xposed 检测方法（可能本版本微信无此检测）")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
@@ -39,7 +38,6 @@ internal object PreventXposedDetectionHook {
                     )
                 }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "Xposed 检测 hook 失败", it) }
             }
-            xposed.log(Log.INFO, HookUtils.TAG, "已阻止微信检测 Xposed：${matches.size} 个方法")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "阻止 Xposed 检测 hook 异常", it) }
     }
 }

@@ -48,7 +48,6 @@ internal object ForceTabletHook {
                     )
                 }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板判定 hook 失败", it) }
             }
-            xposed.log(Log.INFO, HookUtils.TAG, "平板判定已启用：${matches.size} 个方法")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板判定 hook 异常", it) }
     }
 
@@ -75,7 +74,6 @@ internal object ForceTabletHook {
                     )
                 }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "折叠屏判定 hook 失败", it) }
             }
-            xposed.log(Log.INFO, HookUtils.TAG, "折叠屏判定已启用：${matches.size} 个方法")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "折叠屏判定 hook 异常", it) }
     }
 
@@ -113,7 +111,6 @@ internal object ForceTabletHook {
                         }
                 }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "登录其他设备按钮 hook 失败", it) }
             }
-            xposed.log(Log.INFO, HookUtils.TAG, "登录其他设备按钮已启用：${matches.size} 个方法")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "登录其他设备按钮 hook 异常", it) }
     }
 
@@ -145,7 +142,6 @@ internal object ForceTabletHook {
                         .intercept { true }
                 }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板登录校验 hook 失败", it) }
             }
-            xposed.log(Log.INFO, HookUtils.TAG, "平板登录校验已启用：${matches.size} 个方法")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板登录校验 hook 异常", it) }
     }
 

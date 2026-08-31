@@ -20,7 +20,15 @@ import org.luckypray.dexkit.DexKitBridge
 class HookEntry : XposedModule() {
 
     override fun onModuleLoaded(param: ModuleLoadedParam) {
-        log(Log.INFO, HookUtils.TAG, "微末模块已加载")
+        // 仅首次激活时打印一次；之后正常启动不再输出成功日志，
+        // 避免每次打开微信都刷新 LSPosed 日志。错误仍会以 WARN/ERROR 输出。
+        runCatching {
+            val prefs = getRemotePreferences("weimo_prefs")
+            if (!prefs.getBoolean("activated", false)) {
+                log(Log.INFO, HookUtils.TAG, "微末模块已激活")
+                prefs.edit().putBoolean("activated", true).apply()
+            }
+        }.onFailure { /* 远程偏好不可用时静默，不刷日志 */ }
     }
 
     override fun onPackageReady(param: PackageReadyParam) {
@@ -43,7 +51,6 @@ class HookEntry : XposedModule() {
                 DisableHotUpdateHook.install(this, classLoader)
                 AntiRecallHook.install(this, bridge, classLoader)
 
-                log(Log.INFO, HookUtils.TAG, "微末模块全部 Hook 安装完成")
             }
         } catch (t: Throwable) {
             log(Log.ERROR, HookUtils.TAG, "微末模块 Hook 初始化失败", t)

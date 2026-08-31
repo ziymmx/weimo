@@ -35,7 +35,6 @@ internal object DisableHotUpdateHook {
             val clazz = classLoader.loadClass("com.tencent.tinker.loader.shareutil.ShareTinkerInternals")
             val methods = clazz.declaredMethods.filter { it.name.startsWith("isTinkerEnabled") }
             if (methods.isEmpty()) {
-                xposed.log(Log.INFO, HookUtils.TAG, "未发现 isTinkerEnabled 方法（可能本版本无 Tinker）")
                 return
             }
             methods.forEach { method ->
@@ -48,7 +47,6 @@ internal object DisableHotUpdateHook {
                     )
                 }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "Tinker hook 失败：${method.name}", it) }
             }
-            xposed.log(Log.INFO, HookUtils.TAG, "已禁用微信热更新：${methods.size} 个方法")
         }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "禁用热更新 hook 异常", it) }
     }
 
