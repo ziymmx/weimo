@@ -1,7 +1,7 @@
 package com.ziymmx.wx.hook
 
-import android.util.Log
 import com.ziymmx.wx.util.HookUtils
+import com.ziymmx.wx.util.WeLogger
 import io.github.libxposed.api.XposedInterface
 import org.luckypray.dexkit.DexKitBridge
 
@@ -36,8 +36,8 @@ internal object PreventXposedDetectionHook {
                         "weimo_prevent_xposed_$index",
                         false
                     )
-                }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "Xposed 检测 hook 失败", it) }
+                }.onFailure { WeLogger.w(xposed, "Xposed 检测 hook 失败", it) }
             }
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "阻止 Xposed 检测 hook 异常", it) }
+        }.onFailure { WeLogger.w(xposed, "阻止 Xposed 检测 hook 异常", it) }
     }
 }

@@ -11,3 +11,8 @@
 local.properties
 *.keystore
 /dist
+
+# jadx/dexkit decompile artifacts
+/.dex/
+/.jadx-c4/
+/.jadx-out/

@@ -2,9 +2,9 @@ package com.ziymmx.wx.hook
 
 import android.content.ContentValues
 import android.content.Context
-import android.util.Log
 import android.view.View
 import com.ziymmx.wx.util.HookUtils
+import com.ziymmx.wx.util.WeLogger
 import io.github.libxposed.api.XposedInterface
 import org.luckypray.dexkit.DexKitBridge
 import java.lang.reflect.Method
@@ -142,7 +142,7 @@ internal object AntiRecallHook {
             insertMsgMethod = insertDex.getMethodInstance(classLoader).apply { isAccessible = true }
             getMsgInfoMethod = getBySvrIdDex.getMethodInstance(classLoader).apply { isAccessible = true }
 
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "防撤回：消息存储解析失败，仅保留撤回拦截", it) }
+        }.onFailure { WeLogger.w(xposed, "防撤回：消息存储解析失败，仅保留撤回拦截", it) }
     }
 
     /**
@@ -212,15 +212,15 @@ internal object AntiRecallHook {
                     if (result != null && result[TYPE_KEY] == TYPE_REVOKE) {
                         // 先阻断撤回，保证原消息一定保留
                         runCatching { result[TYPE_KEY] = null }
-                            .onFailure { xposed.log(Log.WARN, HookUtils.TAG, "阻断撤回失败", it) }
+                            .onFailure { WeLogger.w(xposed, "阻断撤回失败", it) }
                         // 再尽力插入提示（失败不影响阻断）
                         runCatching { handleRecall(result) }
-                            .onFailure { xposed.log(Log.WARN, HookUtils.TAG, "插入撤回提示失败", it) }
+                            .onFailure { WeLogger.w(xposed, "插入撤回提示失败", it) }
                     }
                     original
                 }
 
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "防撤回 hook 异常", it) }
+        }.onFailure { WeLogger.w(xposed, "防撤回 hook 异常", it) }
     }
 
     private fun handleRecall(result: MutableMap<String, Any?>) {
@@ -331,15 +331,15 @@ internal object AntiRecallHook {
 
                         textView.setOnClickListener { view ->
                             runCatching { jumpToMessage(view, dVar, info) }
-                                .onFailure { xposed.log(Log.WARN, HookUtils.TAG, "定位原消息失败", it) }
+                                .onFailure { WeLogger.w(xposed, "定位原消息失败", it) }
                         }
                         textView.isClickable = true
                         textView.isFocusable = true
-                    }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "绑定撤回提示点击失败", it) }
+                    }.onFailure { WeLogger.w(xposed, "绑定撤回提示点击失败", it) }
                     original
                 }
 
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "撤回提示点击定位 hook 失败（不影响撤回拦截）", it) }
+        }.onFailure { WeLogger.w(xposed, "撤回提示点击定位 hook 失败（不影响撤回拦截）", it) }
     }
 
     private fun jumpToMessage(view: View, dVar: Any, info: RecallInfo) {

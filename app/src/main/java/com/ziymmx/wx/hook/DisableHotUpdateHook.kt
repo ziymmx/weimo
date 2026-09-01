@@ -3,8 +3,8 @@ package com.ziymmx.wx.hook
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
-import android.util.Log
 import com.ziymmx.wx.util.HookUtils
+import com.ziymmx.wx.util.WeLogger
 import io.github.libxposed.api.XposedInterface
 import java.io.File
 
@@ -45,9 +45,9 @@ internal object DisableHotUpdateHook {
                         "weimo_tinker_${method.name}",
                         false
                     )
-                }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "Tinker hook 失败：${method.name}", it) }
+                }.onFailure { WeLogger.w(xposed, "Tinker hook 失败：${method.name}", it) }
             }
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "禁用热更新 hook 异常", it) }
+        }.onFailure { WeLogger.w(xposed, "禁用热更新 hook 异常", it) }
     }
 
     private fun cleanupTinker(classLoader: ClassLoader) {

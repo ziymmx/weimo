@@ -1,9 +1,9 @@
 package com.ziymmx.wx.hook
 
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import com.ziymmx.wx.util.HookUtils
+import com.ziymmx.wx.util.WeLogger
 import io.github.libxposed.api.XposedInterface
 import org.luckypray.dexkit.DexKitBridge
 import java.lang.reflect.Modifier
@@ -35,7 +35,7 @@ internal object ForceTabletHook {
             }.filter { it.returnTypeName == HookUtils.BOOLEAN_TYPE }
 
             if (matches.isEmpty()) {
-                xposed.log(Log.WARN, HookUtils.TAG, "未找到平板判定方法")
+                WeLogger.w(xposed, "未找到平板判定方法")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
@@ -46,9 +46,9 @@ internal object ForceTabletHook {
                         "weimo_tablet_$index",
                         true
                     )
-                }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板判定 hook 失败", it) }
+                }.onFailure { WeLogger.w(xposed, "平板判定 hook 失败", it) }
             }
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板判定 hook 异常", it) }
+        }.onFailure { WeLogger.w(xposed, "平板判定 hook 异常", it) }
     }
 
     // 2. 折叠屏设备判定：让微信把当前设备识别为可折叠/平板形态。
@@ -61,7 +61,7 @@ internal object ForceTabletHook {
             }.filter { it.returnTypeName == HookUtils.BOOLEAN_TYPE }
 
             if (matches.isEmpty()) {
-                xposed.log(Log.WARN, HookUtils.TAG, "未找到折叠屏判定方法")
+                WeLogger.w(xposed, "未找到折叠屏判定方法")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
@@ -72,9 +72,9 @@ internal object ForceTabletHook {
                         "weimo_foldable_$index",
                         true
                     )
-                }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "折叠屏判定 hook 失败", it) }
+                }.onFailure { WeLogger.w(xposed, "折叠屏判定 hook 失败", it) }
             }
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "折叠屏判定 hook 异常", it) }
+        }.onFailure { WeLogger.w(xposed, "折叠屏判定 hook 异常", it) }
     }
 
     // 3. 登录页「登录其他设备」按钮：平板登录流程需要该入口，确保其可见。
@@ -91,7 +91,7 @@ internal object ForceTabletHook {
             }
 
             if (matches.isEmpty()) {
-                xposed.log(Log.WARN, HookUtils.TAG, "未找到登录其他设备按钮逻辑")
+                WeLogger.w(xposed, "未找到登录其他设备按钮逻辑")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
@@ -109,9 +109,9 @@ internal object ForceTabletHook {
                             }
                             original
                         }
-                }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "登录其他设备按钮 hook 失败", it) }
+                }.onFailure { WeLogger.w(xposed, "登录其他设备按钮 hook 失败", it) }
             }
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "登录其他设备按钮 hook 异常", it) }
+        }.onFailure { WeLogger.w(xposed, "登录其他设备按钮 hook 异常", it) }
     }
 
     // 4. 以平板身份登录的资格校验接口：直接放行。
@@ -130,7 +130,7 @@ internal object ForceTabletHook {
             }
 
             if (matches.isEmpty()) {
-                xposed.log(Log.WARN, HookUtils.TAG, "未找到以平板身份登录校验方法")
+                WeLogger.w(xposed, "未找到以平板身份登录校验方法")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
@@ -140,9 +140,9 @@ internal object ForceTabletHook {
                     xposed.hook(method)
                         .setId("weimo_check_login_as_pad_$index")
                         .intercept { true }
-                }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板登录校验 hook 失败", it) }
+                }.onFailure { WeLogger.w(xposed, "平板登录校验 hook 失败", it) }
             }
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "平板登录校验 hook 异常", it) }
+        }.onFailure { WeLogger.w(xposed, "平板登录校验 hook 异常", it) }
     }
 
     // 5. 登录历史界面初始化后，把登录相关 Button 全部置为可见（兜底）。
@@ -169,6 +169,6 @@ internal object ForceTabletHook {
                     }
                     original
                 }
-        }.onFailure { xposed.log(Log.WARN, HookUtils.TAG, "登录历史界面兜底 hook 跳过", it) }
+        }.onFailure { WeLogger.w(xposed, "登录历史界面兜底 hook 跳过", it) }
     }
 }
