@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         applicationId = "com.ziymmx.wx"
-        minSdk = 28
+        minSdk = 33
         targetSdk = 37
         versionCode = 1
         versionName = "1.0.0"
