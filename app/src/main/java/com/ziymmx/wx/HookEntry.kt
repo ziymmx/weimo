@@ -4,6 +4,7 @@ import android.os.Process
 import com.ziymmx.wx.hook.AntiRecallHook
 import com.ziymmx.wx.hook.DisableHotUpdateHook
 import com.ziymmx.wx.hook.ForceTabletHook
+import com.ziymmx.wx.hook.MomentsHook
 import com.ziymmx.wx.hook.PreventXposedDetectionHook
 import com.ziymmx.wx.util.HookUtils
 import com.ziymmx.wx.util.WeLogger
@@ -39,6 +40,7 @@ class HookEntry : XposedModule() {
                 PreventXposedDetectionHook.install(this, bridge, classLoader)
                 DisableHotUpdateHook.install(this, classLoader)
                 AntiRecallHook.install(this, bridge, classLoader)
+                MomentsHook.install(this, bridge, classLoader)
             }
         } catch (t: Throwable) {
             WeLogger.e(this, "微末模块 Hook 初始化失败", t)
