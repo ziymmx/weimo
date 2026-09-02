@@ -1,11 +1,9 @@
 package com.ziymmx.wx
 
 import android.os.Process
-import com.ziymmx.wx.hook.AntiRecallHook
-import com.ziymmx.wx.hook.DisableHotUpdateHook
-import com.ziymmx.wx.hook.ForceTabletHook
-import com.ziymmx.wx.hook.MomentsHook
-import com.ziymmx.wx.hook.PreventXposedDetectionHook
+import com.ziymmx.wx.hook.FeatureInstaller
+import com.ziymmx.wx.hook.xposed.XposedHookBridge
+import com.ziymmx.wx.util.FeatureFlags
 import com.ziymmx.wx.util.HookUtils
 import com.ziymmx.wx.util.WeLogger
 import io.github.libxposed.api.XposedModule
@@ -13,9 +11,9 @@ import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
 import org.luckypray.dexkit.DexKitBridge
 
 /**
- * 微末 Weimo —— 微信 Xposed 模块入口。
+ * 微末 Weimo —— 微信 Xposed 模块入口（LSPosed 路径）。
  *
- * 全部功能默认启用，仅作用于 com.tencent.mm，不注入任何微信 UI，
+ * 全部功能默认启用，仅作用于 com.tencent.mm 主进程，不注入任何微信 UI，
  * 不申请任何网络权限，所有逻辑均在本地完成。
  */
 class HookEntry : XposedModule() {
@@ -29,21 +27,21 @@ class HookEntry : XposedModule() {
         if (Process.myProcessName() != TARGET_PACKAGE) return
         if (!param.isFirstPackage) return
 
+        val logger = XposedHookBridge(this)
         try {
             // 从模块自身 native 目录加载 DexKit，再针对微信 APK 建立索引。
             HookUtils.loadDexKitLibrary(getModuleApplicationInfo().nativeLibraryDir)
 
             DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
-                val classLoader = param.classLoader
-
-                ForceTabletHook.install(this, bridge, classLoader)
-                PreventXposedDetectionHook.install(this, bridge, classLoader)
-                DisableHotUpdateHook.install(this, classLoader)
-                AntiRecallHook.install(this, bridge, classLoader)
-                MomentsHook.install(this, bridge, classLoader)
+                FeatureInstaller.install(
+                    hook = logger,
+                    dex = bridge,
+                    classLoader = param.classLoader,
+                    flags = FeatureFlags.ALL,
+                )
             }
         } catch (t: Throwable) {
-            WeLogger.e(this, "微末模块 Hook 初始化失败", t)
+            WeLogger.e(logger, "Weimo 模块 Hook 初始化失败", t)
         }
     }
 

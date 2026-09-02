@@ -57,5 +57,7 @@ android {
 
 dependencies {
     implementation(libs.dexkit)
+    // Pine: in-process ART hook engine for the Zygisk path (bundled in APK so the Zygisk payload can reuse it).
+    implementation(files("libs/pine.jar"))
     compileOnly(libs.libxposed.api)
 }

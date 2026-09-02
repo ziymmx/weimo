@@ -1,11 +1,12 @@
 package com.ziymmx.wx.hook
 
+import com.ziymmx.wx.hook.common.HookBridge
+
 import android.content.ContentValues
 import android.content.Context
 import android.view.View
 import com.ziymmx.wx.util.HookUtils
 import com.ziymmx.wx.util.WeLogger
-import io.github.libxposed.api.XposedInterface
 import org.luckypray.dexkit.DexKitBridge
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -52,17 +53,17 @@ internal object AntiRecallHook {
     // 提示内容 -> 原始消息定位信息，供点击跳转使用
     private val recallMap = ConcurrentHashMap<String, RecallInfo>()
 
-    fun install(xposed: XposedInterface, bridge: DexKitBridge, classLoader: ClassLoader) {
-        prepareStorage(xposed, bridge, classLoader)
+    fun install(hook: HookBridge, bridge: DexKitBridge, classLoader: ClassLoader) {
+        prepareStorage(hook, bridge, classLoader)
         loadClickClasses(classLoader)
-        hookXmlParser(xposed, bridge, classLoader)
-        hookSystemItemClick(xposed, bridge, classLoader)
+        hookXmlParser(hook, bridge, classLoader)
+        hookSystemItemClick(hook, bridge, classLoader)
     }
 
     // ------------------------------------------------------------------
     // 解析消息存储相关类与方法（参考 WeKite WeServiceApi/WeMessageApi）
     // ------------------------------------------------------------------
-    private fun prepareStorage(xposed: XposedInterface, bridge: DexKitBridge, classLoader: ClassLoader) {
+    private fun prepareStorage(hook: HookBridge, bridge: DexKitBridge, classLoader: ClassLoader) {
         runCatching {
             val msgInfoDex = bridge.findClass {
                 searchPackages("com.tencent.mm.storage")
@@ -142,7 +143,7 @@ internal object AntiRecallHook {
             insertMsgMethod = insertDex.getMethodInstance(classLoader).apply { isAccessible = true }
             getMsgInfoMethod = getBySvrIdDex.getMethodInstance(classLoader).apply { isAccessible = true }
 
-        }.onFailure { WeLogger.w(xposed, "防撤回：消息存储解析失败，仅保留撤回拦截", it) }
+        }.onFailure { WeLogger.w(hook, "防撤回：消息存储解析失败，仅保留撤回拦截", it) }
     }
 
     /**
@@ -192,7 +193,7 @@ internal object AntiRecallHook {
     // ------------------------------------------------------------------
     // 拦截撤回：XmlParser 解析完成后执行
     // ------------------------------------------------------------------
-    private fun hookXmlParser(xposed: XposedInterface, bridge: DexKitBridge, classLoader: ClassLoader) {
+    private fun hookXmlParser(hook: HookBridge, bridge: DexKitBridge, classLoader: ClassLoader) {
         runCatching {
             val matches = bridge.findMethod {
                 matcher {
@@ -203,24 +204,22 @@ internal object AntiRecallHook {
             val method = dexMethod.getMethodInstance(classLoader)
             method.isAccessible = true
 
-            xposed.hook(method)
-                .setId("weimo_anti_recall")
-                .intercept { chain ->
+            hook.hookMethod(method, "weimo_anti_recall"){ chain ->
                     val original = chain.proceed()
                     @Suppress("UNCHECKED_CAST")
                     val result = original as? MutableMap<String, Any?>
                     if (result != null && result[TYPE_KEY] == TYPE_REVOKE) {
                         // 先阻断撤回，保证原消息一定保留
                         runCatching { result[TYPE_KEY] = null }
-                            .onFailure { WeLogger.w(xposed, "阻断撤回失败", it) }
+                            .onFailure { WeLogger.w(hook, "阻断撤回失败", it) }
                         // 再尽力插入提示（失败不影响阻断）
                         runCatching { handleRecall(result) }
-                            .onFailure { WeLogger.w(xposed, "插入撤回提示失败", it) }
+                            .onFailure { WeLogger.w(hook, "插入撤回提示失败", it) }
                     }
                     original
                 }
 
-        }.onFailure { WeLogger.w(xposed, "防撤回 hook 异常", it) }
+        }.onFailure { WeLogger.w(hook, "防撤回 hook 异常", it) }
     }
 
     private fun handleRecall(result: MutableMap<String, Any?>) {
@@ -302,7 +301,7 @@ internal object AntiRecallHook {
     // ------------------------------------------------------------------
     // 让撤回提示可点击：hook ChattingItemSys.m 绑定点击事件
     // ------------------------------------------------------------------
-    private fun hookSystemItemClick(xposed: XposedInterface, bridge: DexKitBridge, classLoader: ClassLoader) {
+    private fun hookSystemItemClick(hook: HookBridge, bridge: DexKitBridge, classLoader: ClassLoader) {
         runCatching {
             val matches = bridge.findMethod {
                 matcher {
@@ -313,9 +312,7 @@ internal object AntiRecallHook {
             val method = dexMethod.getMethodInstance(classLoader)
             method.isAccessible = true
 
-            xposed.hook(method)
-                .setId("weimo_recall_tip_click")
-                .intercept { chain ->
+            hook.hookMethod(method, "weimo_recall_tip_click"){ chain ->
                     val original = chain.proceed()
                     runCatching {
                         val holder = chain.args.getOrNull(0)
@@ -331,15 +328,15 @@ internal object AntiRecallHook {
 
                         textView.setOnClickListener { view ->
                             runCatching { jumpToMessage(view, dVar, info) }
-                                .onFailure { WeLogger.w(xposed, "定位原消息失败", it) }
+                                .onFailure { WeLogger.w(hook, "定位原消息失败", it) }
                         }
                         textView.isClickable = true
                         textView.isFocusable = true
-                    }.onFailure { WeLogger.w(xposed, "绑定撤回提示点击失败", it) }
+                    }.onFailure { WeLogger.w(hook, "绑定撤回提示点击失败", it) }
                     original
                 }
 
-        }.onFailure { WeLogger.w(xposed, "撤回提示点击定位 hook 失败（不影响撤回拦截）", it) }
+        }.onFailure { WeLogger.w(hook, "撤回提示点击定位 hook 失败（不影响撤回拦截）", it) }
     }
 
     private fun jumpToMessage(view: View, dVar: Any, info: RecallInfo) {

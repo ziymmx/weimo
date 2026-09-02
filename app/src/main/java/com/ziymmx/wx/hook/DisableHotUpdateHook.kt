@@ -1,11 +1,12 @@
 package com.ziymmx.wx.hook
 
+import com.ziymmx.wx.hook.common.HookBridge
+
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import com.ziymmx.wx.util.HookUtils
 import com.ziymmx.wx.util.WeLogger
-import io.github.libxposed.api.XposedInterface
 import java.io.File
 
 /**
@@ -25,12 +26,12 @@ internal object DisableHotUpdateHook {
         "com.tencent.tinker.lib.service.DefaultTinkerResultService"
     )
 
-    fun install(xposed: XposedInterface, classLoader: ClassLoader) {
-        hookTinkerEnabled(xposed, classLoader)
+    fun install(hook: HookBridge, classLoader: ClassLoader) {
+        hookTinkerEnabled(hook, classLoader)
         cleanupTinker(classLoader)
     }
 
-    private fun hookTinkerEnabled(xposed: XposedInterface, classLoader: ClassLoader) {
+    private fun hookTinkerEnabled(hook: HookBridge, classLoader: ClassLoader) {
         runCatching {
             val clazz = classLoader.loadClass("com.tencent.tinker.loader.shareutil.ShareTinkerInternals")
             val methods = clazz.declaredMethods.filter { it.name.startsWith("isTinkerEnabled") }
@@ -40,14 +41,14 @@ internal object DisableHotUpdateHook {
             methods.forEach { method ->
                 runCatching {
                     HookUtils.hookBooleanMethod(
-                        xposed,
+                        hook,
                         method,
                         "weimo_tinker_${method.name}",
                         false
                     )
-                }.onFailure { WeLogger.w(xposed, "Tinker hook 失败：${method.name}", it) }
+                }.onFailure { WeLogger.w(hook, "Tinker hook 失败：${method.name}", it) }
             }
-        }.onFailure { WeLogger.w(xposed, "禁用热更新 hook 异常", it) }
+        }.onFailure { WeLogger.w(hook, "禁用热更新 hook 异常", it) }
     }
 
     private fun cleanupTinker(classLoader: ClassLoader) {

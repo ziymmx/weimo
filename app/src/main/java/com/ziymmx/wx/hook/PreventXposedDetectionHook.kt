@@ -1,8 +1,9 @@
 package com.ziymmx.wx.hook
 
+import com.ziymmx.wx.hook.common.HookBridge
+
 import com.ziymmx.wx.util.HookUtils
 import com.ziymmx.wx.util.WeLogger
-import io.github.libxposed.api.XposedInterface
 import org.luckypray.dexkit.DexKitBridge
 
 /**
@@ -14,12 +15,12 @@ import org.luckypray.dexkit.DexKitBridge
  */
 internal object PreventXposedDetectionHook {
 
-    fun install(xposed: XposedInterface, bridge: DexKitBridge, classLoader: ClassLoader) {
+    fun install(hook: HookBridge, bridge: DexKitBridge, classLoader: ClassLoader) {
         runCatching {
             val matches = bridge.findMethod {
                 matcher {
                     usingEqStrings(
-                        "de.robv.android.xposed.XposedBridge",
+                        "de.robv.android.hook.XposedBridge",
                         "com.zte.heartyservice.SCC.FrameworkBridge"
                     )
                 }
@@ -31,13 +32,13 @@ internal object PreventXposedDetectionHook {
             matches.forEachIndexed { index, dexMethod ->
                 runCatching {
                     HookUtils.hookBooleanMethod(
-                        xposed,
+                        hook,
                         dexMethod.getMethodInstance(classLoader),
                         "weimo_prevent_xposed_$index",
                         false
                     )
-                }.onFailure { WeLogger.w(xposed, "Xposed 检测 hook 失败", it) }
+                }.onFailure { WeLogger.w(hook, "Xposed 检测 hook 失败", it) }
             }
-        }.onFailure { WeLogger.w(xposed, "阻止 Xposed 检测 hook 异常", it) }
+        }.onFailure { WeLogger.w(hook, "阻止 Xposed 检测 hook 异常", it) }
     }
 }

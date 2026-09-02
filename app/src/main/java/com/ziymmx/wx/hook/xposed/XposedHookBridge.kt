@@ -1,4 +1,4 @@
-﻿package com.ziymmx.wx.hook.xposed
+package com.ziymmx.wx.hook.xposed
 
 import com.ziymmx.wx.hook.common.HookBridge
 import com.ziymmx.wx.hook.common.HookChain
@@ -30,8 +30,8 @@ internal class XposedHookBridge(private val xposed: XposedInterface) : HookBridg
             .intercept { chain -> callback(LsposedChain(chain)) }
     }
 
-    override fun log(level: Int, tag: String, msg: String) {
-        xposed.log(level, tag, msg, null)
+    override fun log(level: Int, tag: String, msg: String, t: Throwable?) {
+        xposed.log(level, tag, msg, t)
     }
 
     private class LsposedChain(

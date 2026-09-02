@@ -1,7 +1,8 @@
-﻿package com.ziymmx.wx.hook
+package com.ziymmx.wx.hook
 
+import com.ziymmx.wx.hook.common.HookBridge
+import com.ziymmx.wx.util.FeatureFlags
 import com.ziymmx.wx.util.WeLogger
-import io.github.libxposed.api.XposedInterface
 import org.luckypray.dexkit.DexKitBridge
 
 /**
@@ -16,15 +17,26 @@ internal object MomentsHook {
     private const val NETSCENE_SNS_SYNC_TAG = "com.tencent.mm.plugin.sns.model.NetSceneSnsSync"
     private const val AD_INFO_CLASS = "com.tencent.mm.plugin.sns.storage.ADInfo"
 
-    fun install(xposed: XposedInterface, bridge: DexKitBridge, classLoader: ClassLoader) {
-        hookSnsDelAction(xposed, bridge, classLoader)
-        hookCommentDelAction(xposed, bridge, classLoader)
-        hookAdBlock(xposed, bridge, classLoader)
+    fun install(
+        hook: HookBridge,
+        bridge: DexKitBridge,
+        classLoader: ClassLoader,
+        flags: Int,
+    ) {
+        if (flags and FeatureFlags.MOMENTS_ANTI_RECALL != 0) {
+            hookSnsDelAction(hook, bridge, classLoader)
+        }
+        if (flags and FeatureFlags.MOMENTS_COMMENT_ANTI_RECALL != 0) {
+            hookCommentDelAction(hook, bridge, classLoader)
+        }
+        if (flags and FeatureFlags.MOMENTS_AD_BLOCK != 0) {
+            hookAdBlock(hook, bridge, classLoader)
+        }
     }
 
     // 1. 朋友圈防撤回：拦截服务端同步的『删除朋友圈』动作。
     private fun hookSnsDelAction(
-        xposed: XposedInterface,
+        hook: HookBridge,
         bridge: DexKitBridge,
         classLoader: ClassLoader
     ) {
@@ -33,23 +45,21 @@ internal object MomentsHook {
                 findDelAction(bridge, "processAdSnsDelAction")
 
             if (matches.isEmpty()) {
-                WeLogger.w(xposed, "朋友圈防撤回：未找到服务端删除动作处理方法")
+                WeLogger.w(hook, "朋友圈防撤回：未找到服务端删除动作处理方法")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
                 runCatching {
                     val method = dexMethod.getMethodInstance(classLoader).apply { isAccessible = true }
-                    xposed.hook(method)
-                        .setId("weimo_moments_del_$index")
-                        .intercept { true }
-                }.onFailure { WeLogger.w(xposed, "朋友圈防撤回 hook 失败", it) }
+                    hook.hookMethod(method, "weimo_moments_del_$index"){ true }
+                }.onFailure { WeLogger.w(hook, "朋友圈防撤回 hook 失败", it) }
             }
-        }.onFailure { WeLogger.w(xposed, "朋友圈防撤回 hook 异常", it) }
+        }.onFailure { WeLogger.w(hook, "朋友圈防撤回 hook 异常", it) }
     }
 
     // 2. 评论防撤回：拦截服务端同步的『删除评论』动作。
     private fun hookCommentDelAction(
-        xposed: XposedInterface,
+        hook: HookBridge,
         bridge: DexKitBridge,
         classLoader: ClassLoader
     ) {
@@ -57,23 +67,21 @@ internal object MomentsHook {
             val matches = findDelAction(bridge, "processCommentDelAction")
 
             if (matches.isEmpty()) {
-                WeLogger.w(xposed, "评论防撤回：未找到服务端删除评论处理方法")
+                WeLogger.w(hook, "评论防撤回：未找到服务端删除评论处理方法")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
                 runCatching {
                     val method = dexMethod.getMethodInstance(classLoader).apply { isAccessible = true }
-                    xposed.hook(method)
-                        .setId("weimo_comment_del_$index")
-                        .intercept { true }
-                }.onFailure { WeLogger.w(xposed, "评论防撤回 hook 失败", it) }
+                    hook.hookMethod(method, "weimo_comment_del_$index"){ true }
+                }.onFailure { WeLogger.w(hook, "评论防撤回 hook 失败", it) }
             }
-        }.onFailure { WeLogger.w(xposed, "评论防撤回 hook 异常", it) }
+        }.onFailure { WeLogger.w(hook, "评论防撤回 hook 异常", it) }
     }
 
     // 3. 朋友圈广告拦截：ADInfo(String) 构造返回 null。
     private fun hookAdBlock(
-        xposed: XposedInterface,
+        hook: HookBridge,
         bridge: DexKitBridge,
         classLoader: ClassLoader
     ) {
@@ -86,19 +94,17 @@ internal object MomentsHook {
             }.filter { it.isConstructor }
 
             if (matches.isEmpty()) {
-                WeLogger.w(xposed, "广告拦截：未找到 ADInfo 构造")
+                WeLogger.w(hook, "广告拦截：未找到 ADInfo 构造")
                 return
             }
             matches.forEachIndexed { index, dexMethod ->
                 runCatching {
                     val constructor =
                         dexMethod.getConstructorInstance(classLoader).apply { isAccessible = true }
-                    xposed.hook(constructor)
-                        .setId("weimo_moments_ad_$index")
-                        .intercept { null }
-                }.onFailure { WeLogger.w(xposed, "广告拦截 hook 失败", it) }
+                    hook.hookConstructor(constructor, "weimo_moments_ad_$index"){ null }
+                }.onFailure { WeLogger.w(hook, "广告拦截 hook 失败", it) }
             }
-        }.onFailure { WeLogger.w(xposed, "广告拦截 hook 异常", it) }
+        }.onFailure { WeLogger.w(hook, "广告拦截 hook 异常", it) }
     }
 
     private fun findDelAction(bridge: DexKitBridge, actionName: String) =

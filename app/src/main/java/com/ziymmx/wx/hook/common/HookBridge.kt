@@ -1,4 +1,4 @@
-﻿package com.ziymmx.wx.hook.common
+package com.ziymmx.wx.hook.common
 
 import java.lang.reflect.Constructor
 import java.lang.reflect.Member
@@ -21,7 +21,7 @@ interface HookBridge {
     fun hookConstructor(constructor: Constructor<*>, hookId: String, callback: (HookChain) -> Any?): Any?
 
     /** 输出日志（release 构建仅保留 ERROR 级别）。 */
-    fun log(level: Int, tag: String, msg: String)
+    fun log(level: Int, tag: String, msg: String, t: Throwable?)
 }
 
 /**

@@ -2,7 +2,7 @@ package com.ziymmx.wx.util
 
 import android.util.Log
 import com.ziymmx.wx.BuildConfig
-import io.github.libxposed.api.XposedInterface
+import com.ziymmx.wx.hook.common.HookBridge
 
 /**
  * 统一日志出口。
@@ -18,19 +18,19 @@ internal object WeLogger {
 
     const val TAG = "Weimo"
 
-    fun d(xposed: XposedInterface?, msg: String, t: Throwable? = null) {
-        if (BuildConfig.DEBUG) xposed?.log(Log.DEBUG, TAG, msg, t)
+    fun d(hook: HookBridge?, msg: String, t: Throwable? = null) {
+        if (BuildConfig.DEBUG) hook?.log(Log.DEBUG, TAG, msg, t)
     }
 
-    fun i(xposed: XposedInterface?, msg: String, t: Throwable? = null) {
-        if (BuildConfig.DEBUG) xposed?.log(Log.INFO, TAG, msg, t)
+    fun i(hook: HookBridge?, msg: String, t: Throwable? = null) {
+        if (BuildConfig.DEBUG) hook?.log(Log.INFO, TAG, msg, t)
     }
 
-    fun w(xposed: XposedInterface?, msg: String, t: Throwable? = null) {
-        if (BuildConfig.DEBUG) xposed?.log(Log.WARN, TAG, msg, t)
+    fun w(hook: HookBridge?, msg: String, t: Throwable? = null) {
+        if (BuildConfig.DEBUG) hook?.log(Log.WARN, TAG, msg, t)
     }
 
-    fun e(xposed: XposedInterface?, msg: String, t: Throwable? = null) {
-        xposed?.log(Log.ERROR, TAG, msg, t)
+    fun e(hook: HookBridge?, msg: String, t: Throwable? = null) {
+        hook?.log(Log.ERROR, TAG, msg, t)
     }
 }
