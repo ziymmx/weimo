@@ -43,3 +43,41 @@ jobs:
             app/build/outputs/apk/release/*.apk
             app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+  build_zygisk:
+    name: Build Zygisk module
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ needs.build.result == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Android NDK
+        run: |
+          NDK_VER="27.2.12479018"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$NDK_VER"
+          NDK_BIN="$ANDROID_HOME/ndk/$NDK_VER/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          test -x "$NDK_BIN/aarch64-linux-android21-clang++"
+          test -x "$NDK_BIN/armv7a-linux-androideabi21-clang++"
+
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: weimo-apks
+          path: artifacts
+
+      - name: Build Zygisk module
+        run: |
+          APK_PATH=$(find artifacts -name "app-release.apk" | head -1)
+          echo "APK: $APK_PATH"
+          test -n "$APK_PATH"
+          bash zygisk/scripts/build-zygisk.sh "$APK_PATH" dist
+
+      - name: Upload Zygisk module
+        uses: actions/upload-artifact@v4
+        with:
+          name: weimo-zygisk
+          path: dist/*.zip
+          if-no-files-found: error

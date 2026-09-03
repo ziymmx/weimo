@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Weimo 微信增强</title>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">WEIMO · ZYGISK</p>
+          <h1>微信增强功能</h1>
+        </div>
+        <div class="enabled-count" aria-live="polite">
+          <span id="enabled-count">0</span>
+          <span>项已开启</span>
+        </div>
+      </header>
+
+      <section class="toolbar" aria-label="操作">
+        <button class="button button-secondary" id="reset-all" type="button">
+          恢复默认（全部启用）
+        </button>
+      </section>
+
+      <section class="feature-list" aria-label="功能开关">
+        <div class="loading" id="feature-loading" role="status">正在读取开关...</div>
+        <div id="feature-list" hidden></div>
+        <div class="empty-state" id="empty-state" hidden>
+          无法读取功能开关，请确认模块已安装且当前在 KernelSU 中打开。
+        </div>
+      </section>
+
+      <p class="hint">
+        开关修改后需<strong>完全结束微信进程</strong>再重新打开才会生效；可在模块「动作」中一键重启微信。
+      </p>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

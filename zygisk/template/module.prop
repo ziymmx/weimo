@@ -1,0 +1,6 @@
+id=weimo_zygisk
+name=Weimo 微信增强 (Zygisk)
+version=1.0.0
+versionCode=1
+author=ziymmx
+description=微信增强模块：防撤回、强制平板布局、反 Xposed 检测、禁用热更新、朋友圈增强
